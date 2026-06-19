@@ -167,11 +167,17 @@ const Layout = () => {
             <span>Settings</span>
           </NavLink>
           <button
-            onClick={handleLogOut}
+            // onClick={handleLogOut}
             className="flex items-center gap-3 text-[#F87171] hover:bg-[#F87171]/10 w-full px-4 py-3 rounded-xl transition-all duration-200 text-sm font-medium"
           >
             <LogOut size={18} /> <span>Logout</span>
           </button>
+          {/* <button
+            onClick={handleLogOut}
+            className="flex items-center gap-3 text-[#F87171] hover:bg-[#F87171]/10 w-full px-4 py-3 rounded-xl transition-all duration-200 text-sm font-medium"
+          >
+            <LogOut size={18} /> <span>Logout</span>
+          </button> */}
         </div>
       </aside>
 
@@ -191,7 +197,8 @@ const Layout = () => {
               </button>
               <div className="flex items-center gap-2 min-w-0">
                 <h2 className="text-sm sm:text-base font-semibold text-[#1E2640] truncate">
-                  Interview / UI/UX Designer
+                  Interview
+                  {/* / UI/UX Designer */}
                 </h2>
                 <span className="bg-[#E0E7FF] text-[#4F46E5] text-[10px] sm:text-[11px] font-medium px-2 py-0.5 rounded-full shrink-0 max-w-[90px] sm:max-w-none truncate">
                   Sams Brother
@@ -251,10 +258,14 @@ const Layout = () => {
                     My Profile
                   </NavLink>
                   <div className="h-px bg-gray-100 my-1 mx-2"></div>
-                  <button onClick={handleLogOut} className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[#F87171] hover:bg-red-50 transition-colors">
+                  <button className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[#F87171] hover:bg-red-50 transition-colors">
                     <LogOut size={16} />
                     Logout
                   </button>
+                  {/* <button onClick={handleLogOut} className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[#F87171] hover:bg-red-50 transition-colors">
+                    <LogOut size={16} />
+                    Logout
+                  </button> */}
                 </div>
               )}
             </div>

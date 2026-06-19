@@ -2,7 +2,7 @@ import { Globe, Heart, MessageSquare, Share2 } from "lucide-react";
 
 const DashBoardFooter = () => {
     return (
-        <footer className="w-full bg-[#F4F6FA] border-t border-gray-200/60 mt-auto py-4">
+        <footer className="w-full bg-[#F4F6FA] border-t border-gray-200/60  py-4 mt-10">
             <div className=" flex flex-col md:flex-row justify-between items-start gap-8 lg:gap-12">
 
                 <div className="flex flex-col items-start max-w-sm space-y-4">

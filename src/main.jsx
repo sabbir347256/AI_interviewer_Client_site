@@ -10,6 +10,10 @@ import Layout from "./components/Pages/AdminAndAgentDashBoard/Admin/DashBoardLay
 import Login from "./components/Pages/Authentication/Login/Login";
 import DashBoardroot from "./components/Pages/AdminAndAgentDashBoard/Admin/DashBoardLayout/Dashboard/DashBoardroot";
 import Interview from "./components/Pages/Interview/Interview";
+import PerformerInsight from "./components/Pages/PerformerInsight/PerformerInsight";
+import Talent from "./components/Pages/Talent/Talent";
+import Underconstraction from "./components/Pages/utilies/Underconstraction";
+import AuthPage from "./components/Pages/Authentication/AuthPage/AuthPage";
 
 const queryClient = new QueryClient();
 
@@ -30,13 +34,25 @@ const router = createBrowserRouter([
             path: '/ai-interview',
             element: <Interview></Interview>
           },
+          {
+            path: '/insight',
+            element: <PerformerInsight></PerformerInsight>
+          },
+          {
+            path: '/talent',
+            element: <Talent></Talent>
+          },
         ]
+      },
+      {
+        path: "*",
+        element: <Underconstraction></Underconstraction>
       }
     ]
   },
   {
-    path: "/admin-login",
-    element: <Login></Login>
+    path: "/login",
+    element: <AuthPage></AuthPage>
   }
 ])
 
