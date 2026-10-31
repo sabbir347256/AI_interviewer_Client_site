@@ -1,58 +1,66 @@
-import { useMemo, useState } from "react";
+import React, { useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AuthProvider } from "./CreateContext";
-import { jwtDecode } from "jwt-decode";
-import { useQuery } from "@tanstack/react-query";
-import config from "../Pages/utilies/envCongig";
+import axiosInstance from "../../lib/axiosInstance";
 
 const AuthContext = ({ children }) => {
-  const [token, setToken] = useState(() => localStorage.getItem("accessToken"));
+  const queryClient = useQueryClient();
 
-
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["userProfile"],
-    queryFn: () =>
-      fetch(`${config.backendUrl}/user/get-profile`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      }).then((res) => {
-        if (!res.ok) {
-          throw new Error("Failed to load profile");
+    queryFn: async () => {
+      try {
+        const response = await axiosInstance.get("/auth/me");
+        return response.data.data;
+      } catch (error) {
+        if (error.response?.status !== 401) {
+          throw error;
         }
-        return res.json();
-      }),
+
+        try {
+          await axiosInstance.post("/auth/refresh");
+
+          const response = await axiosInstance.get("/auth/me");
+
+          return response.data.data;
+        } catch {
+          return null;
+        }
+      }
+    },
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
-  const user = useMemo(() => {
-    if (!token) return null;
-    try {
-      return jwtDecode(token);
-    } catch (error) {
-      console.error("JWT Decode Error:", error);
-      return null;
-    }
-  }, [token]);
+  const user = data ?? null;
 
-  const loading = false;
+  console.log(user)
 
-  const authInfo = {
-    setToken,
-    isLoading,
-    token,
-    user,
-    role: user?.role,
-    loading,
-    data,
-    refetch
-  };
-
+  const authInfo = useMemo(
+    () => ({
+      user,
+      role: user?.role ?? null,
+      isAuthenticated: !!user,
+      isLoading,
+      isFetching,
+      loading: isLoading,
+      data: user,
+      refetch,
+      refreshUser: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: ["userProfile"],
+        });
+      },
+      clearUser: () => {
+        queryClient.setQueryData(["userProfile"], null);
+      },
+    }),
+    [user, isLoading, isFetching, refetch, queryClient],
+  );
 
   return (
-    <AuthProvider.Provider value={authInfo}>
-      {children}
-    </AuthProvider.Provider>
+    <AuthProvider.Provider value={authInfo}>{children}</AuthProvider.Provider>
   );
 };
 
