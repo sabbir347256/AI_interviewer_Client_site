@@ -19,7 +19,7 @@ const AgentPrivateRoute = () => {
         return <Outlet></Outlet>;
     }
 
-    return <Navigate to="/admin-login" state={{ from: location }} replace />;
+    return <Navigate to="/" state={{ from: location }} replace />;
 };
 
 export default AgentPrivateRoute;

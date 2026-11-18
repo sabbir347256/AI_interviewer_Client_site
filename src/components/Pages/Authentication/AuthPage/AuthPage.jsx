@@ -10,7 +10,7 @@ import {
   Sparkles,
   User,
 } from "lucide-react";
-import { useForm } from "react-hook-form";
+import { set, useForm } from "react-hook-form";
 import axiosInstance from "../../../../lib/axiosInstance";
 import { useNavigate } from "react-router";
 
@@ -56,7 +56,10 @@ const AuthPage = () => {
           password: data.password,
         });
 
-        navigate("/dashboard", { replace: true });
+        setTimeout(() => {
+          navigate("/", { replace: true });
+          window.location.reload();
+        }, 1000);
       } else {
         await axiosInstance.post("/users/register", {
           name: data.name,
