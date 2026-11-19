@@ -6,7 +6,6 @@ import {
   Clock,
   Award,
   ArrowRight,
-  TrendingUp,
   Calendar,
   Zap,
   Loader2,
@@ -26,212 +25,196 @@ const DashBoardroot = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-[70vh] flex items-center justify-center">
-        <Loader2 className="animate-spin text-slate-900" size={36} />
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 size={30} className="animate-spin text-slate-700" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="p-6 text-center text-rose-600 font-medium bg-rose-50 rounded-2xl border border-rose-200 max-w-lg mx-auto mt-10">
+      <div className="mx-auto mt-10 max-w-lg rounded-lg bg-white p-6 text-center text-sm text-rose-600">
         Failed to load dashboard summary. Please try again.
       </div>
     );
   }
 
-  const score = data?.averageScore || 0;
-  const radius = 38;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (score / 100) * circumference;
+  const score = Math.min(100, Math.max(0, Number(data?.averageScore) || 0));
+  const recentInterviews = Array.isArray(data?.recentInterviews)
+    ? data.recentInterviews
+    : [];
+
+  const stats = [
+    {
+      label: "Total Interviews",
+      value: data?.totalInterviews || 0,
+      detail: "All sessions",
+      icon: Bot,
+      iconClass: "bg-slate-100 text-slate-700",
+    },
+    {
+      label: "Completed",
+      value: data?.completedInterviews || 0,
+      detail: "Finished sessions",
+      icon: CheckCircle2,
+      iconClass: "bg-emerald-50 text-emerald-700",
+    },
+    {
+      label: "In Progress",
+      value: data?.inProgressInterviews || 0,
+      detail: "Pending sessions",
+      icon: Clock,
+      iconClass: "bg-amber-50 text-amber-700",
+    },
+    {
+      label: "Average Score",
+      value: `${score}%`,
+      detail: "Performance grade",
+      icon: Award,
+      iconClass: "bg-blue-50 text-blue-700",
+    },
+  ];
 
   return (
-    <div className="space-y-8 bg-[#FAFAFC] min-h-screen">
-      <div className="bg-slate-900 text-white p-8 sm:p-10 rounded-3xl shadow-xl flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-        <div className="space-y-3 max-w-2xl">
-          <div className="inline-flex items-center gap-2 bg-slate-800 px-3 py-1 rounded-md text-xs font-medium text-slate-300 border border-slate-700">
-            <Sparkles size={13} className="text-amber-400" /> Active Workspace
+    <main className="min-h-screen space-y-7 bg-slate-50">
+      <section className="flex flex-col justify-between gap-6 rounded-lg bg-slate-900 p-6 text-white sm:p-8 lg:flex-row lg:items-center">
+        <div className="max-w-2xl">
+          <div className="mb-4 inline-flex items-center gap-2 text-xs font-medium text-slate-300">
+            <Sparkles size={15} className="text-amber-400" />
+            Active Workspace
           </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
             Master Technical Interviews
           </h1>
-          <p className="text-slate-400 text-sm sm:text-base font-normal leading-relaxed">
-            Simulate rigorous AI mock interviews, review granular performance
-            metrics, and build confidence for your career growth.
+
+          <p className="mt-3 max-w-xl text-sm leading-6 text-slate-400">
+            Practice AI-powered mock interviews, review your performance, and
+            improve your skills for your next career opportunity.
           </p>
         </div>
-        <div>
-          <Link
-            to="/ai-interview"
-            className="bg-white text-slate-900 px-6 py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2.5 hover:bg-slate-100 transition-colors shadow-sm"
-          >
-            <Bot size={18} className="text-slate-900" /> Start New Interview{" "}
-            <ArrowRight size={16} />
-          </Link>
-        </div>
-      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-3xl border border-slate-200/60 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Total Interviews
-            </span>
-            <div className="bg-slate-100 p-2.5 rounded-xl text-slate-700">
-              <Bot size={20} />
+        <Link
+          to="/ai-interview"
+          className="inline-flex w-fit items-center justify-center gap-2 rounded-lg bg-white px-5 py-3 text-sm font-semibold text-slate-900"
+        >
+          <Bot size={18} />
+          Start New Interview
+          <ArrowRight size={16} />
+        </Link>
+      </section>
+
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {stats.map((item) => {
+          const Icon = item.icon;
+
+          return (
+            <div
+              key={item.label}
+              className="flex items-center justify-between gap-4 rounded-lg bg-white p-5"
+            >
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  {item.label}
+                </p>
+
+                <h2 className="mt-3 text-3xl font-bold text-slate-900">
+                  {item.value}
+                </h2>
+
+                <p className="mt-1 text-xs text-slate-500">{item.detail}</p>
+              </div>
+
+              <div
+                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${item.iconClass}`}
+              >
+                <Icon size={21} />
+              </div>
             </div>
-          </div>
-          <div className="flex items-baseline justify-between">
-            <h3 className="text-3xl font-extrabold text-slate-900">
-              {data?.totalInterviews || 0}
-            </h3>
-            <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md flex items-center gap-1">
-              <TrendingUp size={12} /> Live
-            </span>
-          </div>
-        </div>
+          );
+        })}
+      </section>
 
-        <div className="bg-white p-6 rounded-3xl border border-slate-200/60 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Completed
-            </span>
-            <div className="bg-emerald-50 p-2.5 rounded-xl text-emerald-700">
-              <CheckCircle2 size={20} />
+      <section className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        <div className="rounded-lg bg-white p-5 sm:p-6 xl:col-span-2">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">
+                Recent Interview Sessions
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Your latest interview activity
+              </p>
             </div>
-          </div>
-          <div className="flex items-baseline justify-between">
-            <h3 className="text-3xl font-extrabold text-slate-900">
-              {data?.completedInterviews || 0}
-            </h3>
-            <span className="text-xs font-semibold text-slate-500">
-              Sessions
-            </span>
-          </div>
-        </div>
 
-        <div className="bg-white p-6 rounded-3xl border border-slate-200/60 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              In Progress
-            </span>
-            <div className="bg-amber-50 p-2.5 rounded-xl text-amber-700">
-              <Clock size={20} />
-            </div>
-          </div>
-          <div className="flex items-baseline justify-between">
-            <h3 className="text-3xl font-extrabold text-slate-900">
-              {data?.inProgressInterviews || 0}
-            </h3>
-            <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md">
-              Pending
-            </span>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-3xl border border-slate-200/60 shadow-sm flex items-center justify-between">
-          <div className="space-y-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Average Score
-            </span>
-            <h3 className="text-3xl font-extrabold text-slate-900">{score}%</h3>
-            <p className="text-xs text-slate-500 font-medium">
-              Performance Grade
-            </p>
-          </div>
-          <div className="relative flex items-center justify-center">
-            <svg className="w-20 h-20 transform -rotate-90">
-              <circle
-                cx="40"
-                cy="40"
-                r={radius}
-                stroke="currentColor"
-                strokeWidth="6"
-                className="text-slate-100 fill-none"
-              />
-              <circle
-                cx="40"
-                cy="40"
-                r={radius}
-                stroke="currentColor"
-                strokeWidth="6"
-                strokeDasharray={circumference}
-                strokeDashoffset={strokeDashoffset}
-                strokeLinecap="round"
-                className="text-slate-900 fill-none"
-              />
-            </svg>
-            <div className="absolute text-xs font-extrabold text-slate-900">
-              {score}%
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/60 shadow-sm space-y-6">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-extrabold text-slate-900">
-              Recent Interview Sessions
-            </h3>
             <Link
               to="/ai-interview"
-              className="text-xs font-semibold text-slate-700 hover:underline flex items-center gap-1"
+              className="inline-flex items-center gap-1 text-sm font-semibold text-slate-700"
             >
-              View All <ArrowRight size={14} />
+              View All
+              <ArrowRight size={15} />
             </Link>
           </div>
 
-          {data?.recentInterviews?.length === 0 ? (
-            <div className="text-center py-12 space-y-2 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-              <Zap className="mx-auto text-slate-400" size={28} />
-              <p className="text-sm font-semibold text-slate-700">
+          {recentInterviews.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Zap size={28} className="text-slate-400" />
+              <p className="mt-3 text-sm font-semibold text-slate-700">
                 No interviews recorded yet.
               </p>
-              <p className="text-xs text-slate-400">
-                Complete a mock session to populate analytics.
+              <p className="mt-1 text-xs text-slate-500">
+                Complete a mock interview to see your activity here.
               </p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {data?.recentInterviews?.map((item) => (
+            <div>
+              {recentInterviews.map((item) => (
                 <div
                   key={item._id}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-200/60 gap-4"
+                  className="flex flex-col justify-between gap-4 border-b border-slate-100 py-4 last:border-b-0 sm:flex-row sm:items-center"
                 >
-                  <div className="space-y-1">
+                  <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-slate-900" />
-                      <h4 className="font-bold text-sm text-slate-900">
-                        {item.jobRole}
-                      </h4>
+                      <span className="h-2 w-2 shrink-0 rounded-full bg-slate-900" />
+                      <h3 className="truncate text-sm font-semibold text-slate-900">
+                        {item.jobRole || "Untitled Interview"}
+                      </h3>
                     </div>
-                    <div className="flex items-center gap-3 text-xs text-slate-500 font-medium pt-0.5">
-                      <span className="uppercase bg-white px-2 py-0.5 rounded border border-slate-200">
-                        {item.language}
+
+                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-slate-500">
+                      <span className="uppercase">
+                        {item.language || "N/A"}
                       </span>
-                      <span className="uppercase bg-white px-2 py-0.5 rounded border border-slate-200">
-                        {item.difficulty}
+                      <span className="uppercase">
+                        {item.difficulty || "N/A"}
                       </span>
-                      <span className="flex items-center gap-1">
-                        <Calendar size={12} />{" "}
-                        {new Date(item.createdAt).toLocaleDateString()}
+                      <span className="inline-flex items-center gap-1">
+                        <Calendar size={13} />
+                        {item.createdAt
+                          ? new Date(item.createdAt).toLocaleDateString()
+                          : "Date unavailable"}
                       </span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4 justify-between sm:justify-end border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-200">
+
+                  <div className="flex shrink-0 items-center justify-between gap-5 sm:justify-end">
                     <span
-                      className={`text-xs font-bold px-3 py-1 rounded-full ${item.status === "COMPLETED" ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-amber-50 text-amber-700 border border-amber-200"}`}
+                      className={`text-xs font-semibold ${
+                        item.status === "COMPLETED"
+                          ? "text-emerald-700"
+                          : "text-amber-700"
+                      }`}
                     >
-                      {item.status}
+                      {item.status || "PENDING"}
                     </span>
+
                     {item.finalScore !== undefined &&
                       item.finalScore !== null && (
                         <div className="text-right">
-                          <span className="text-base font-extrabold text-slate-900">
+                          <span className="text-base font-bold text-slate-900">
                             {item.finalScore}
                           </span>
-                          <span className="text-xs text-slate-400">/100</span>
+                          <span className="text-xs text-slate-500">/100</span>
                         </div>
                       )}
                   </div>
@@ -242,45 +225,45 @@ const DashBoardroot = () => {
         </div>
 
         <div className="space-y-6">
-          <div className="bg-slate-900 text-white rounded-3xl p-6 sm:p-8 shadow-sm space-y-4">
-            <div className="bg-slate-800 w-10 h-10 rounded-xl flex items-center justify-center text-slate-200">
+          <div className="rounded-lg bg-slate-900 p-6 text-white">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-800 text-slate-200">
               <Award size={20} />
             </div>
-            <div className="space-y-1.5">
-              <h3 className="text-base font-extrabold">
-                Expert Evaluation Tip
-              </h3>
-              <p className="text-slate-400 text-xs sm:text-sm leading-relaxed font-normal">
-                Structure your responses using clear definitions followed by
-                hands-on engineering examples to improve AI score accuracy.
-              </p>
-            </div>
+
+            <h3 className="mt-5 text-base font-bold">Expert Evaluation Tip</h3>
+
+            <p className="mt-2 text-sm leading-6 text-slate-400">
+              Structure your answers with clear definitions and practical
+              engineering examples. Explain your approach step by step.
+            </p>
           </div>
 
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/60 shadow-sm space-y-4">
-            <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider">
+          <div className="rounded-lg bg-white p-6">
+            <h3 className="text-sm font-bold text-slate-900">
               Quick Navigation
             </h3>
-            <div className="space-y-2.5">
+
+            <div className="mt-4 space-y-1">
               <Link
                 to="/ai-interview"
-                className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 hover:bg-slate-100 text-xs font-semibold text-slate-800 transition-colors"
+                className="flex items-center justify-between rounded-lg px-3 py-3 text-sm font-medium text-slate-700"
               >
-                <span>Start New Mock Interview</span>
-                <ArrowRight size={14} className="text-slate-400" />
+                Start New Mock Interview
+                <ArrowRight size={15} className="text-slate-400" />
               </Link>
+
               <Link
                 to="/insight"
-                className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 hover:bg-slate-100 text-xs font-semibold text-slate-800 transition-colors"
+                className="flex items-center justify-between rounded-lg px-3 py-3 text-sm font-medium text-slate-700"
               >
-                <span>View Performer Insight</span>
-                <ArrowRight size={14} className="text-slate-400" />
+                View Performance Insights
+                <ArrowRight size={15} className="text-slate-400" />
               </Link>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 };
 
