@@ -61,30 +61,48 @@ const Interview = () => {
 
   const stopListening = useCallback(() => {
     listeningRef.current = false;
+
     if (recognitionRef.current) {
-      recognitionRef.current.stop();
+      try {
+        recognitionRef.current.stop();
+      } catch (err) {
+        console.error("Recognition stop error:", err);
+      }
     }
   }, []);
 
   const stopCamera = useCallback(() => {
-    streamRef.current?.getTracks().forEach((track) => {
-      track.stop();
-    });
-    streamRef.current = null;
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+
     if (videoRef.current) {
+      videoRef.current.pause();
       videoRef.current.srcObject = null;
     }
+
     setCameraOn(false);
   }, []);
 
   const startCamera = useCallback(async () => {
     try {
+      setError("");
+
+      if (!window.isSecureContext) {
+        throw new Error("Camera access requires HTTPS or localhost.");
+      }
+
       if (!navigator.mediaDevices?.getUserMedia) {
-        throw new Error("Camera is not supported");
+        throw new Error("Your browser does not support camera access.");
       }
 
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
+        video: {
+          facingMode: "user",
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
         audio: false,
       });
 
@@ -93,42 +111,71 @@ const Interview = () => {
         return;
       }
 
-      streamRef.current?.getTracks().forEach((track) => {
-        track.stop();
-      });
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+      }
 
       streamRef.current = stream;
       setCameraOn(true);
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
     } catch (err) {
-      setError(err.message || "Unable to access camera");
+      const messages = {
+        NotAllowedError:
+          "Camera permission denied. Please allow camera access.",
+        NotFoundError: "No camera found on your device.",
+        NotReadableError:
+          "Camera is already being used by another application.",
+        OverconstrainedError: "Camera does not support the requested settings.",
+      };
+
+      setError(messages[err.name] || err.message || "Unable to access camera.");
+
+      setCameraOn(false);
     }
   }, []);
 
   useEffect(() => {
     mountedRef.current = true;
+
     return () => {
       mountedRef.current = false;
-      recognitionRef.current?.abort();
+
+      listeningRef.current = false;
+
+      if (recognitionRef.current) {
+        recognitionRef.current.abort();
+        recognitionRef.current = null;
+      }
+
       window.speechSynthesis?.cancel();
-      streamRef.current?.getTracks().forEach((track) => {
-        track.stop();
-      });
+
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => {
+          track.stop();
+        });
+
+        streamRef.current = null;
+      }
     };
   }, []);
 
   useEffect(() => {
-    if (
-      status === "active" &&
-      cameraOn &&
-      videoRef.current &&
-      streamRef.current
-    ) {
-      videoRef.current.srcObject = streamRef.current;
+    const video = videoRef.current;
+    const stream = streamRef.current;
+
+    if (status !== "active" || !cameraOn || !video || !stream) {
+      return;
     }
+
+    video.srcObject = stream;
+
+    video.play().catch((err) => {
+      console.error("Camera playback error:", err);
+      setError("Unable to display camera preview.");
+    });
+
+    return () => {
+      video.pause();
+    };
   }, [status, cameraOn]);
 
   const speakQuestion = useCallback(
@@ -193,76 +240,131 @@ const Interview = () => {
     }
   };
 
-  const handleStartListening = () => {
+  const handleStartListening = async () => {
     if (!recognitionSupported) {
-      setError("Speech recognition is not available. Please type your answer.");
+      setError(
+        "Speech recognition is not supported in this browser. Please use Chrome or type your answer.",
+      );
       return;
     }
 
-    if (!micOn || listeningRef.current || status !== "active") {
+    if (!micOn || listeningRef.current || status !== "active" || loading) {
       return;
     }
-
-    stopSpeech();
-    setError("");
-
-    const SpeechRecognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
-
-    recognition.lang = language === "bn" ? "bn-BD" : "en-US";
-    recognition.continuous = true;
-    recognition.interimResults = true;
-
-    let finalized = answerRef.current.trim();
-
-    recognition.onresult = (event) => {
-      let finalText = "";
-      let interimText = "";
-
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const value = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
-          finalText += value + " ";
-        } else {
-          interimText += value;
-        }
-      }
-
-      if (finalText.trim()) {
-        finalized = [finalized, finalText.trim()].filter(Boolean).join(" ");
-      }
-
-      const combined = [finalized, interimText.trim()]
-        .filter(Boolean)
-        .join(" ");
-      answerRef.current = combined;
-      setAnswer(combined);
-    };
-
-    recognition.onerror = (event) => {
-      if (event.error !== "aborted") {
-        setError(`Speech recognition error: ${event.error}`);
-      }
-    };
-
-    recognition.onend = () => {
-      listeningRef.current = false;
-      recognitionRef.current = null;
-      updateAnswer(finalized);
-      setListening(false);
-    };
 
     try {
+      setError("");
+      stopSpeech();
+
+      if (!window.isSecureContext) {
+        throw new Error("Microphone requires HTTPS or localhost.");
+      }
+
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error("Microphone access is not supported by this browser.");
+      }
+
+      const permissionStream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+      });
+
+      permissionStream.getTracks().forEach((track) => track.stop());
+
+      const SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
+
+      if (!SpeechRecognition) {
+        throw new Error("Speech recognition is unavailable in this browser.");
+      }
+
+      const recognition = new SpeechRecognition();
+
+      recognition.lang = language === "bn" ? "bn-BD" : "en-US";
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.maxAlternatives = 1;
+
+      let finalized = answerRef.current.trim();
+
+      recognition.onstart = () => {
+        listeningRef.current = true;
+        setListening(true);
+        setError("");
+      };
+
+      recognition.onresult = (event) => {
+        let finalText = "";
+        let interimText = "";
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+
+          if (event.results[i].isFinal) {
+            finalText += transcript + " ";
+          } else {
+            interimText += transcript;
+          }
+        }
+
+        if (finalText.trim()) {
+          finalized = [finalized, finalText.trim()].filter(Boolean).join(" ");
+        }
+
+        const combined = [finalized, interimText.trim()]
+          .filter(Boolean)
+          .join(" ");
+
+        answerRef.current = combined;
+        setAnswer(combined);
+      };
+
+      recognition.onerror = (event) => {
+        const errorMessages = {
+          "not-allowed": "Please allow microphone permission in your browser.",
+          "service-not-allowed": "Speech recognition service is blocked.",
+          "audio-capture": "No microphone was detected.",
+          "no-speech": "No speech detected. Please try again.",
+          network: "Network error. Check your internet connection.",
+          "language-not-supported":
+            "This language is not supported by your browser.",
+          aborted: "Voice recognition was stopped.",
+        };
+
+        if (event.error !== "aborted") {
+          setError(
+            errorMessages[event.error] || `Microphone error: ${event.error}`,
+          );
+        }
+      };
+
+      recognition.onend = () => {
+        listeningRef.current = false;
+        recognitionRef.current = null;
+
+        if (mountedRef.current) {
+          updateAnswer(finalized);
+          setListening(false);
+        }
+      };
+
       recognitionRef.current = recognition;
-      listeningRef.current = true;
       recognition.start();
-      setListening(true);
-    } catch {
+    } catch (err) {
       listeningRef.current = false;
       recognitionRef.current = null;
       setListening(false);
-      setError("Unable to start microphone");
+
+      const messages = {
+        NotAllowedError:
+          "Microphone permission denied. Please allow microphone access.",
+        NotFoundError: "No microphone found on your device.",
+        NotReadableError: "Microphone is being used by another application.",
+        AbortError: "Microphone access was interrupted.",
+      };
+
+      setError(
+        messages[err.name] || err.message || "Unable to start microphone.",
+      );
     }
   };
 
@@ -363,7 +465,10 @@ const Interview = () => {
   };
 
   const toggleMic = () => {
-    if (micOn) stopListening();
+    if (micOn) {
+      stopListening();
+    }
+
     setMicOn((prev) => !prev);
   };
 
@@ -612,11 +717,11 @@ const Interview = () => {
               autoPlay
               muted
               playsInline
-              alt="Candidate webcam feed"
               className={`w-full h-full object-cover scale-x-[-1] ${
                 cameraOn ? "block" : "hidden"
               }`}
             />
+
             {!cameraOn && (
               <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 gap-2">
                 <CameraOff size={22} />
